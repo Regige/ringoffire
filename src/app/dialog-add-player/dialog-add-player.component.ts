@@ -3,6 +3,7 @@ import { MatDialogModule } from '@angular/material/dialog';
 import { MatInputModule } from '@angular/material/input';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDialogRef } from '@angular/material/dialog';
 
 @Component({
   selector: 'app-dialog-add-player',
@@ -15,12 +16,12 @@ export class DialogAddPlayerComponent {
 
   name: string = '';
 
-  constructor() {
+  constructor( public dialogRef: MatDialogRef<DialogAddPlayerComponent> ) {
 
   }
 
   onNoClick() {
-
+    this.dialogRef.close();
   }
 
 }
