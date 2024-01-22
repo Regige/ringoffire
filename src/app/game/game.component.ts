@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Game } from './../../models/game';
 import { PlayerComponent } from './../player/player.component';
@@ -7,6 +7,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatDialog } from '@angular/material/dialog';
 import { DialogAddPlayerComponent } from './../dialog-add-player/dialog-add-player.component';
 import { GameInfoComponent } from '../game-info/game-info.component';
+import { Observable } from 'rxjs';
+import { GameServices } from '../firebase-services/game-services';
+import { ActivatedRoute } from '@angular/router';
+import { Firestore, doc, collectionData, collection, onSnapshot, updateDoc } from '@angular/fire/firestore';
 
 
 @Component({
@@ -18,39 +22,77 @@ import { GameInfoComponent } from '../game-info/game-info.component';
 })
 
 export class GameComponent implements OnInit {
-  pickCardAnimation = false;
-  currentCard: string = '';
   game: Game;
+
+  docRef: string = '';
+  docData: any;
+  unsubGame;
   
 
-  constructor(public dialog: MatDialog) {
+  firestore: Firestore = inject(Firestore);
+
+  constructor( private route: ActivatedRoute, private gameService: GameServices, public dialog: MatDialog) {
     this.game = new Game();
+
+    this.route.params.subscribe((params) => {
+      this.docRef = params['id'];
+    })
+
+    this.unsubGame = this.subGame();
   }
 
   ngOnInit(): void {
-    this.newGame();
-  }
-  
-  newGame() {
-    this.game = new Game();
-    console.log(this.game);
+    this.newGame();  
   }
 
+  newGame() {
+    this.game = new Game();
+
+    // this.gameService.addGame(this.game.toJson());
+  }
+
+  subGame() {
+      return onSnapshot(doc(this.firestore, 'games', this.docRef), (doc) => {
+        console.log('Does it work:', doc.data());
+        console.log('It also works:', this.docRef);
+        
+        if(doc.exists()){
+          this.docData = doc.data();
+
+          this.game.currentPlayer = this.docData.currentPlayer;
+          this.game.playedCards = this.docData.playedCards;
+          this.game.players = this.docData.players;
+          this.game.stack = this.docData.stack;
+          this.game.pickCardAnimation = this.docData.pickCardAnimation,
+          this.game.currentCard = this.docData.currentCard
+        }
+      });
+  }
+
+  ngonDestroy() {
+    this.unsubGame();
+  }
+
+  async saveGame() { // update Game
+     await updateDoc(doc(this.firestore, "games", this.docRef), this.game.toJson()).catch((err) => { console.log(err); });
+  }
+  
+  
   takeCard() {
-    if(!this.pickCardAnimation) {
+    if(!this.game.pickCardAnimation) {
       let newCard = this.game.stack.pop();
       if(newCard != undefined) {
-        this.currentCard = newCard;
+        this.game.currentCard = newCard;
       } 
-      this.pickCardAnimation = true;
-      console.log('New card: ' + this.currentCard);
-      console.log('Game is', this.game);
+      this.game.pickCardAnimation = true;
       
       this.game.currentPlayer++;
       this.game.currentPlayer = this.game.currentPlayer % this.game.players.length;
+      this.saveGame();
       setTimeout(() => {
-        this.game.playedCards.push(this.currentCard);
-        this.pickCardAnimation = false;
+        this.game.playedCards.push(this.game.currentCard);
+        this.game.pickCardAnimation = false;
+        this.saveGame();
       }, 1000);
     }
   }
@@ -61,6 +103,7 @@ export class GameComponent implements OnInit {
     dialogRef.afterClosed().subscribe((name: string) => {
       if(name && name.length > 0) {
         this.game.players.push(name);
+        this.saveGame();
       }
     });
   }

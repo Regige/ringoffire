@@ -96,6 +96,23 @@
             ],
             "scripts": []
           }
+        },
+        "deploy": {
+          "builder": "@angular/fire:deploy",
+          "options": {
+            "version": 2
+          },
+          "configurations": {
+            "production": {
+              "buildTarget": "ringoffi:build:production",
+              "serveTarget": "ringoffi:serve:production"
+            },
+            "development": {
+              "buildTarget": "ringoffi:build:development",
+              "serveTarget": "ringoffi:serve:development"
+            }
+          },
+          "defaultConfiguration": "production"
         }
       }
     }
