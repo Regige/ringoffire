@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Game } from './../../models/game';
 import { PlayerComponent } from './../player/player.component';
+import { PlayerMobileComponent } from '../player-mobile/player-mobile.component';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialog } from '@angular/material/dialog';
@@ -11,12 +12,13 @@ import { Observable } from 'rxjs';
 import { GameServices } from '../firebase-services/game-services';
 import { ActivatedRoute } from '@angular/router';
 import { Firestore, doc, collectionData, collection, onSnapshot, updateDoc } from '@angular/fire/firestore';
+import { Router } from '@angular/router';
 
 
 @Component({
   selector: 'app-game',
   standalone: true,
-  imports: [CommonModule, PlayerComponent, MatButtonModule, MatIconModule, DialogAddPlayerComponent, GameInfoComponent],
+  imports: [CommonModule, PlayerComponent, PlayerMobileComponent, MatButtonModule, MatIconModule, DialogAddPlayerComponent, GameInfoComponent],
   templateUrl: './game.component.html',
   styleUrl: './game.component.scss'
 })
@@ -31,7 +33,7 @@ export class GameComponent implements OnInit {
 
   firestore: Firestore = inject(Firestore);
 
-  constructor( private route: ActivatedRoute, private gameService: GameServices, public dialog: MatDialog) {
+  constructor( private route: ActivatedRoute, private gameService: GameServices, public dialog: MatDialog, private router: Router) {
     this.game = new Game();
 
     this.route.params.subscribe((params) => {
@@ -79,21 +81,25 @@ export class GameComponent implements OnInit {
   
   
   takeCard() {
-    if(!this.game.pickCardAnimation) {
-      let newCard = this.game.stack.pop();
-      if(newCard != undefined) {
-        this.game.currentCard = newCard;
-      } 
-      this.game.pickCardAnimation = true;
+    if(this.game.stack.length > 0) {
+      if(!this.game.pickCardAnimation) {
+        let newCard = this.game.stack.pop();
+        if(newCard != undefined) {
+          this.game.currentCard = newCard;
+        } 
+        this.game.pickCardAnimation = true;
       
-      this.game.currentPlayer++;
-      this.game.currentPlayer = this.game.currentPlayer % this.game.players.length;
-      this.saveGame();
-      setTimeout(() => {
-        this.game.playedCards.push(this.game.currentCard);
-        this.game.pickCardAnimation = false;
+        this.game.currentPlayer++;
+        this.game.currentPlayer = this.game.currentPlayer % this.game.players.length;
         this.saveGame();
-      }, 1000);
+        setTimeout(() => {
+          this.game.playedCards.push(this.game.currentCard);
+          this.game.pickCardAnimation = false;
+          this.saveGame();
+        }, 1000);
+      }
+    } else {
+      this.router.navigateByUrl('');
     }
   }
 
