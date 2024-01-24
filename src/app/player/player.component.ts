@@ -10,6 +10,7 @@ import { Component, OnInit, Input } from '@angular/core';
 export class PlayerComponent implements OnInit {
   
   @Input() name: string = '';
+  @Input() image: string = '1.webp';
   @Input() playerActive: boolean = false;
   constructor() {  
   }
